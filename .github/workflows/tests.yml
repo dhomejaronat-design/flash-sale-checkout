@@ -1,0 +1,24 @@
+name: Tests
+on:
+  push:
+  pull_request:
+jobs:
+  flash-sale-checkout:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    - uses: ruby/setup-ruby@v1
+      with:
+        ruby-version: '3.3'
+        bundler-cache: true
+    - name: Unit tests
+      run: bundle exec rake test
+    - name: Load test (500 shoppers, 100 units)
+      run: 'bundle exec rackup -p 9292 > server.log 2>&1 &
+
+        for i in $(seq 1 30); do curl -s localhost:9292/health && break; sleep 1;
+        done
+
+        python3 loadtest/flash_sale.py --stock 100 --buyers 500
+
+        '
